@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Trophy, Play, Info, RotateCcw, Volume2, VolumeX, Flame, Pause } from 'lucide-react';
+import { Sparkles, Trophy, Play, Info, RotateCcw, Volume2, VolumeX, Flame, Pause, Maximize, Minimize } from 'lucide-react';
 import { MapManager } from './map';
 import { Som } from './sound';
 import { GameHUD } from './components/GameHUD';
@@ -26,6 +26,7 @@ export default function App() {
   const [isPortrait, setIsPortrait] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [virtualDir, setVirtualDir] = useState<{ x: number; y: number } | null>(null);
+  const [isFullscreenFill, setIsFullscreenFill] = useState(false);
 
   // Global prevention of context menus, text selection, and long-press page config triggers
   useEffect(() => {
@@ -76,6 +77,53 @@ export default function App() {
   }, []);
 
   const isMobile = isPortrait;
+
+  // Auto-detect horizontal orientation on tablets and touch devices
+  useEffect(() => {
+    if (!isPortrait && isTouch) {
+      // In landscape on tablet/touch, default to full screen fill so it is never cut off
+      setIsFullscreenFill(true);
+    }
+  }, [isPortrait, isTouch]);
+
+  const toggleFillScreen = async () => {
+    Som.click();
+    const nextState = !isFullscreenFill;
+    setIsFullscreenFill(nextState);
+
+    if (nextState) {
+      setNotification('⛶ Modo Tela Cheia: Toda a tela preenchida sem cortes!');
+    } else {
+      setNotification('⊡ Modo Ajuste: Moldura clássica ativada!');
+    }
+
+    try {
+      const doc = document as any;
+      const el = document.documentElement as any;
+      const isCurrentlyFullscreen =
+        !!(doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
+
+      if (nextState && !isCurrentlyFullscreen) {
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          await el.webkitRequestFullscreen();
+        } else if (el.msRequestFullscreen) {
+          await el.msRequestFullscreen();
+        }
+      } else if (!nextState && isCurrentlyFullscreen) {
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        } else if (doc.msExitFullscreen) {
+          await doc.msExitFullscreen();
+        }
+      }
+    } catch {
+      // Graceful fallback if browser restricts native requestFullscreen
+    }
+  };
 
   // Keyboard Event Simulation for Mobile controls
   const simulateKeyDown = (key: string, code: string) => {
@@ -332,18 +380,30 @@ export default function App() {
   }, [gameState]);
 
   return (
-    <div className="relative w-screen h-screen bg-slate-950 flex flex-col items-center justify-center overflow-hidden font-mono select-none p-0 sm:p-4">
+    <div
+      className={`relative w-screen min-h-[100dvh] max-h-[100dvh] h-[100dvh] bg-slate-950 flex flex-col items-center justify-center overflow-hidden font-mono select-none ${
+        isFullscreenFill ? 'p-0' : 'p-0 sm:p-2'
+      }`}
+    >
       {/* Background visual graphics */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black pointer-events-none" />
 
-      {/* Main 16:9 Screen container with unified, flawless scaling */}
+      {/* Main Screen container with unified, adaptive scaling */}
       <div
-        className="relative w-full aspect-[16/9] border-2 sm:border-8 border-red-700 rounded sm:rounded-lg shadow-2xl ring-1 sm:ring-4 ring-amber-400 bg-black overflow-hidden flex flex-col justify-between"
-        style={{
-          width: '100%',
-          maxWidth: 'min(100%, min(177.78vh, 1200px))',
-          maxHeight: 'min(100vh, 675px)',
-        }}
+        className={`relative w-full h-full ${
+          isFullscreenFill
+            ? 'max-w-none max-h-none border-0 rounded-none ring-0 shadow-none'
+            : 'aspect-[16/9] border-2 sm:border-4 md:border-6 border-red-700 rounded sm:rounded-lg shadow-2xl ring-1 sm:ring-2 ring-amber-400'
+        } bg-black overflow-hidden flex flex-col justify-between`}
+        style={
+          isFullscreenFill
+            ? { width: '100vw', height: '100dvh', maxWidth: '100vw', maxHeight: '100dvh' }
+            : {
+                width: '100%',
+                maxWidth: 'min(100%, min(177.78vh, 1200px))',
+                maxHeight: 'min(100%, min(100dvh, 675px))',
+              }
+        }
       >
         
         {/* State Machine screens */}
@@ -396,12 +456,20 @@ export default function App() {
                 {isTouch ? '🐾 Toque para iniciar a aventura' : 'Dica: Você também pode usar [ESPAÇO]'}
               </div>
 
-              <div className="flex justify-center gap-4 text-[8.5px] sm:text-[10px] text-slate-400 font-mono pt-1">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-4 text-[8.5px] sm:text-[10px] text-slate-400 font-mono pt-1">
                 <button 
                   onClick={() => setShowHelp(true)} 
                   className="hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-slate-800"
                 >
                   <Info size={11} /> Como Jogar
+                </button>
+                <button 
+                  onClick={toggleFillScreen} 
+                  className="hover:text-amber-300 transition-colors cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/50 text-amber-300 font-bold"
+                  title="Aumentar e Preencher Toda a Tela (Horizontal)"
+                >
+                  {isFullscreenFill ? <Minimize size={11} /> : <Maximize size={11} />}
+                  <span>{isFullscreenFill ? 'Ajustar' : '⛶ Preencher Tela'}</span>
                 </button>
                 <button 
                   onClick={handleToggleSound} 
@@ -526,6 +594,8 @@ export default function App() {
             onOpenPause={() => setShowPause(true)}
             soundMuted={soundMuted}
             onToggleSound={handleToggleSound}
+            onToggleFullscreen={toggleFillScreen}
+            isFullscreen={isFullscreenFill}
           />
         )}
 
@@ -545,6 +615,7 @@ export default function App() {
           setShakeState={setShakeState}
           onShowNotification={showNotificationMessage}
           virtualDirection={virtualDir}
+          fillScreen={isFullscreenFill}
           onAddPotions={(q) => {
             setPotionsCount((prev) => prev + q);
             showNotificationMessage(`Encontrou +${q} Poção(ões) no Baú! 🧪✨ Recarregou energia!`);
@@ -626,6 +697,20 @@ export default function App() {
                     style={{ minHeight: '42px' }}
                   >
                     <Play size={12} className="fill-white" /> CONTINUAR JOGO
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={toggleFillScreen}
+                    className={`w-full py-2 font-bold text-[9px] sm:text-[11px] rounded border cursor-pointer transition-colors flex items-center justify-center gap-2 active:scale-95 ${
+                      isFullscreenFill
+                        ? 'bg-amber-600/30 hover:bg-amber-600/40 text-amber-200 border-amber-500 shadow-md'
+                        : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border-indigo-500/80'
+                    }`}
+                    style={{ minHeight: '38px' }}
+                  >
+                    {isFullscreenFill ? <Minimize size={12} /> : <Maximize size={12} />}
+                    <span>{isFullscreenFill ? 'AJUSTAR PROPORÇÃO (MOLDURA)' : '⛶ PREENCHER TODA A TELA (HORIZONTAL)'}</span>
                   </button>
 
                   <button

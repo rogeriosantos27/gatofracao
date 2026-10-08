@@ -25,6 +25,7 @@ interface GameCanvasProps {
   onAddPotions: (count: number) => void;
   onShowNotification?: (msg: string) => void;
   virtualDirection?: { x: number; y: number } | null;
+  fillScreen?: boolean;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -43,6 +44,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   onAddPotions,
   onShowNotification,
   virtualDirection = null,
+  fillScreen = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const keysPressed = useRef<{ [key: string]: boolean }>({});
@@ -1758,14 +1760,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
   return (
     <div 
-      className="relative w-full h-full flex items-center justify-center pt-12 sm:pt-16 select-none bg-slate-950"
+      className="relative flex-1 w-full h-full min-h-0 min-w-0 flex items-center justify-center select-none bg-slate-950 overflow-hidden"
+      style={{
+        paddingTop: 'calc(2.5rem + env(safe-area-inset-top, 0px))',
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
       }}
     >
       {/* Scanline Screen Retro Effect Overlay */}
-      <div className="absolute inset-0 top-12 sm:top-16 pointer-events-none z-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.08)_50%)] bg-[length:100%_4px]" />
+      <div className="absolute inset-0 pointer-events-none z-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.08)_50%)] bg-[length:100%_4px]" />
 
       <canvas
         ref={canvasRef}
@@ -1780,9 +1785,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           e.preventDefault();
           e.stopPropagation();
         }}
-        className="w-full max-w-full max-h-full aspect-[16/9] border-2 sm:border-4 border-red-800 rounded bg-black outline-none block image-render-pixelated shadow-2xl cursor-pointer touch-none"
+        className={`block image-render-pixelated bg-black outline-none cursor-pointer touch-none shadow-2xl transition-all ${
+          fillScreen
+            ? 'w-full h-full max-w-full max-h-full border-0 rounded-none'
+            : 'max-w-full max-h-full aspect-[16/9] border sm:border-2 border-red-800 rounded'
+        }`}
         tabIndex={1}
         style={{
+          width: fillScreen ? '100%' : undefined,
+          height: fillScreen ? '100%' : undefined,
+          objectFit: fillScreen ? 'fill' : 'contain',
           touchAction: 'none',
           WebkitTouchCallout: 'none',
           userSelect: 'none',

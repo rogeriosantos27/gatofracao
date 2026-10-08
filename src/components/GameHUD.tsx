@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Heart, Trophy, Sparkles, HelpCircle, Volume2, VolumeX, Backpack, Pause } from 'lucide-react';
+import { Heart, Trophy, Sparkles, HelpCircle, Volume2, VolumeX, Backpack, Pause, Maximize, Minimize } from 'lucide-react';
 
 interface GameHUDProps {
   playerHp: number;
@@ -17,6 +17,8 @@ interface GameHUDProps {
   onOpenPause?: () => void;
   soundMuted: boolean;
   onToggleSound: () => void;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
 }
 
 export const GameHUD: React.FC<GameHUDProps> = ({
@@ -30,6 +32,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onOpenPause,
   soundMuted,
   onToggleSound,
+  onToggleFullscreen,
+  isFullscreen = false,
 }) => {
   const hpPercentage = Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100));
 
@@ -104,12 +108,33 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-1 sm:gap-2 border-l border-slate-800 pl-1 sm:pl-3">
+          {/* Enlarge / Fill Screen Button for horizontal tablets */}
+          {onToggleFullscreen && (
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className={`px-1.5 sm:px-2.5 py-1 rounded border transition-all cursor-pointer min-w-[42px] min-h-[42px] sm:min-w-0 sm:min-h-0 flex items-center justify-center gap-1 text-[7.5px] sm:text-[9.5px] font-bold font-mono active:scale-95 ${
+                isFullscreen
+                  ? 'bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                  : 'bg-indigo-950/70 hover:bg-indigo-900 border-indigo-500/70 text-indigo-200 hover:text-white'
+              }`}
+              title={isFullscreen ? 'Ajustar proporção' : 'Aumentar e Preencher Toda a Tela (Horizontal)'}
+            >
+              {isFullscreen ? (
+                <Minimize className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              ) : (
+                <Maximize className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              )}
+              <span className="hidden xs:inline">{isFullscreen ? 'AJUSTAR' : 'PREENCHER'}</span>
+            </button>
+          )}
+
           {/* Pause / ESC button for tablet and mobile */}
           {onOpenPause && (
             <button
               type="button"
               onClick={onOpenPause}
-              className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 rounded border border-amber-500/60 transition-colors cursor-pointer min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center gap-1 text-[7.5px] sm:text-[9.5px] font-bold font-mono active:scale-95"
+              className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 rounded border border-amber-500/60 transition-colors cursor-pointer min-w-[42px] min-h-[42px] sm:min-w-0 sm:min-h-0 flex items-center justify-center gap-1 text-[7.5px] sm:text-[9.5px] font-bold font-mono active:scale-95"
               title="Pausar jogo / Menu de Opções (ESC)"
             >
               <Pause className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-300" />

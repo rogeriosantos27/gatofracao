@@ -174,7 +174,7 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
             e.preventDefault();
             e.stopPropagation();
           }}
-          className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-slate-950/75 border-2 border-amber-500/40 backdrop-blur-md pointer-events-auto flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.8)] touch-none cursor-pointer"
+          className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-950/75 border-2 border-amber-500/40 backdrop-blur-md pointer-events-auto flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.8)] touch-none cursor-pointer"
           style={{ touchAction: 'none', WebkitTouchCallout: 'none', userSelect: 'none' }}
         >
           {/* Subtle Directional Cross Guide in Background */}
