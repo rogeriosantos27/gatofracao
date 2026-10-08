@@ -1,0 +1,6 @@
+{
+  "name": "Fraction Champion Island",
+  "description": "An interactive retro RPG where you explore a beautiful island, meet legendary champions, and solve fraction challenges in sports minigames to collect champion medals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
