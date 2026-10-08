@@ -4,13 +4,14 @@
  */
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Backpack, Sparkles } from 'lucide-react';
+import { Backpack, Sparkles, Pause } from 'lucide-react';
 
 interface TouchControlsProps {
   onDirectionChange: (dir: { x: number; y: number } | null) => void;
   onActionPress: () => void;
   onActionRelease: () => void;
   onPotionPress: () => void;
+  onPausePress?: () => void;
   potionsCount: number;
   playerHp: number;
   playerMaxHp: number;
@@ -22,6 +23,7 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
   onActionPress,
   onActionRelease,
   onPotionPress,
+  onPausePress,
   potionsCount,
   playerHp,
   playerMaxHp,
@@ -227,6 +229,33 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
           </div>
         </div>
 
+        {/* ================= ESC / PAUSE QUICK BUTTON ================= */}
+        <div className="flex flex-col items-center mb-1 pointer-events-auto">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onPausePress) onPausePress();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onPausePress) onPausePress();
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-slate-900/95 border-2 border-amber-500/80 hover:border-amber-400 text-amber-300 font-mono text-[8px] sm:text-[9.5px] font-black shadow-[0_4px_12px_rgba(0,0,0,0.8)] flex items-center gap-1.5 active:scale-90 transition-transform cursor-pointer touch-none"
+            style={{ touchAction: 'none', WebkitTouchCallout: 'none', userSelect: 'none', minHeight: '36px' }}
+            title="Pausar jogo / Menu (ESC)"
+          >
+            <Pause size={11} className="fill-amber-300" />
+            <span>ESC / PAUSA</span>
+          </button>
+        </div>
+
         {/* ================= ACTION BUTTONS A and B ================= */}
         <div
           className="flex items-center gap-3 sm:gap-4 pointer-events-auto"
@@ -238,7 +267,14 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
           {/* BUTTON B: HEAL / POTION */}
           <div className="flex flex-col items-center">
             <button
+              type="button"
               onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsBPressed(true);
+                onPotionPress();
+              }}
+              onTouchStart={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsBPressed(true);
@@ -249,14 +285,20 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
                 e.stopPropagation();
                 setIsBPressed(false);
               }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsBPressed(false);
+              }}
               onPointerCancel={() => setIsBPressed(false)}
+              onTouchCancel={() => setIsBPressed(false)}
               onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
               }}
               disabled={potionsCount === 0 || playerHp >= playerMaxHp}
               className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 flex flex-col items-center justify-center shadow-xl transition-all cursor-pointer select-none touch-none ${
-                isBPressed ? 'scale-90 brightness-125' : 'active:scale-95'
+                isBPressed ? 'scale-90 brightness-125 ring-2 ring-emerald-400' : 'active:scale-95'
               } ${
                 potionsCount > 0 && playerHp < playerMaxHp
                   ? 'bg-emerald-700/80 border-emerald-400 text-white shadow-emerald-950/60'
@@ -278,7 +320,14 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
           {/* BUTTON A: INTERACT / ACTION */}
           <div className="flex flex-col items-center">
             <button
+              type="button"
               onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsAPressed(true);
+                onActionPress();
+              }}
+              onTouchStart={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsAPressed(true);
@@ -290,7 +339,17 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
                 setIsAPressed(false);
                 onActionRelease();
               }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsAPressed(false);
+                onActionRelease();
+              }}
               onPointerCancel={() => {
+                setIsAPressed(false);
+                onActionRelease();
+              }}
+              onTouchCancel={() => {
                 setIsAPressed(false);
                 onActionRelease();
               }}

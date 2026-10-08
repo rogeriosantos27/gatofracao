@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Trophy, Play, Info, RotateCcw, Volume2, VolumeX, Flame } from 'lucide-react';
+import { Sparkles, Trophy, Play, Info, RotateCcw, Volume2, VolumeX, Flame, Pause } from 'lucide-react';
 import { MapManager } from './map';
 import { Som } from './sound';
 import { GameHUD } from './components/GameHUD';
@@ -21,27 +21,42 @@ export default function App() {
   const [gameState, setGameState] = useState<GameState>('MENU');
   const [soundMuted, setSoundMuted] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showPause, setShowPause] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [isPortrait, setIsPortrait] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [virtualDir, setVirtualDir] = useState<{ x: number; y: number } | null>(null);
 
-  // Global prevention of context menus and long-press page config triggers
+  // Global prevention of context menus, text selection, and long-press page config triggers
   useEffect(() => {
     const handleContext = (e: Event) => {
       e.preventDefault();
+      e.stopPropagation();
     };
-    window.addEventListener('contextmenu', handleContext, { capture: true });
+    window.addEventListener('contextmenu', handleContext, { capture: true, passive: false });
+    window.addEventListener('selectstart', handleContext, { capture: true, passive: false });
+    window.addEventListener('gesturestart', handleContext, { capture: true, passive: false });
+    window.addEventListener('gesturechange', handleContext, { capture: true, passive: false });
+    window.addEventListener('gestureend', handleContext, { capture: true, passive: false });
+
     return () => {
       window.removeEventListener('contextmenu', handleContext, { capture: true });
+      window.removeEventListener('selectstart', handleContext, { capture: true });
+      window.removeEventListener('gesturestart', handleContext, { capture: true });
+      window.removeEventListener('gesturechange', handleContext, { capture: true });
+      window.removeEventListener('gestureend', handleContext, { capture: true });
     };
   }, []);
 
-  // Detect orientation and touch capabilities
+  // Detect orientation and touch capabilities (including tablets and iPads)
   useEffect(() => {
     const handleResize = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
-      setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
+      const hasTouch =
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      setIsTouch(hasTouch);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -189,16 +204,31 @@ export default function App() {
     }
   };
 
-  // Check if "P" key is pressed to use potion
+  // Check if "P" key or "Escape" key is pressed
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'p' && gameState === 'EXPLORACAO') {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (showPause) {
+          setShowPause(false);
+        } else if (showHelp) {
+          setShowHelp(false);
+        } else if (gameState === 'DIALOGO') {
+          setGameState('EXPLORACAO');
+          setActiveNpc(null);
+        } else if (gameState === 'MINIJOGO') {
+          setGameState('EXPLORACAO');
+          setActiveNpc(null);
+        } else if (gameState === 'EXPLORACAO') {
+          setShowPause((prev) => !prev);
+        }
+      } else if (e.key.toLowerCase() === 'p' && gameState === 'EXPLORACAO') {
         triggerUsePotion();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [potionsCount, player, gameState]);
+  }, [showPause, showHelp, gameState, potionsCount, player]);
 
   // Handle interacting with an NPC
   const handleInteractNPC = (npc: NPC) => {
@@ -356,18 +386,28 @@ export default function App() {
                   setGameState('EXPLORACAO');
                   showNotificationMessage('Bem-vindo à Ilha! Encontre os 7 Campeões Sagrados!');
                 }}
-                className="px-4 sm:px-8 py-1.5 sm:py-3 bg-red-700 hover:bg-red-600 border-2 border-amber-400 text-white font-bold text-[9px] sm:text-xs rounded shadow-lg transition-transform hover:shadow-red-950 cursor-pointer inline-flex items-center gap-1.5 sm:gap-2 font-mono tracking-wider"
+                className="px-5 sm:px-8 py-2.5 sm:py-3.5 bg-red-700 hover:bg-red-600 border-2 border-amber-400 text-white font-bold text-[10px] sm:text-xs rounded shadow-lg transition-transform hover:shadow-red-950 cursor-pointer inline-flex items-center gap-2 font-mono tracking-wider active:scale-95"
+                style={{ minHeight: '44px' }}
               >
-                <Play size={12} className="fill-white" /> JOGAR AGORA [ESPAÇO]
+                <Play size={13} className="fill-white" /> JOGAR AGORA
               </motion.button>
 
-              <div className="flex justify-center gap-4 text-[8px] sm:text-[10px] text-slate-500 font-mono">
-                <button onClick={() => setShowHelp(true)} className="hover:text-slate-300 transition-colors cursor-pointer flex items-center gap-1">
-                  <Info size={10} /> Como Jogar
+              <div className="text-[7.5px] sm:text-[9px] text-amber-300 font-mono">
+                {isTouch ? '🐾 Toque para iniciar a aventura' : 'Dica: Você também pode usar [ESPAÇO]'}
+              </div>
+
+              <div className="flex justify-center gap-4 text-[8.5px] sm:text-[10px] text-slate-400 font-mono pt-1">
+                <button 
+                  onClick={() => setShowHelp(true)} 
+                  className="hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-slate-800"
+                >
+                  <Info size={11} /> Como Jogar
                 </button>
-                <span>•</span>
-                <button onClick={handleToggleSound} className="hover:text-slate-300 transition-colors cursor-pointer flex items-center gap-1">
-                  {soundMuted ? <VolumeX size={10} /> : <Volume2 size={10} />} Audio
+                <button 
+                  onClick={handleToggleSound} 
+                  className="hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-slate-800"
+                >
+                  {soundMuted ? <VolumeX size={11} /> : <Volume2 size={11} />} Som
                 </button>
               </div>
             </div>
@@ -483,6 +523,7 @@ export default function App() {
             pocoes={potionsCount}
             onUsePotion={triggerUsePotion}
             onOpenHelp={() => setShowHelp(true)}
+            onOpenPause={() => setShowPause(true)}
             soundMuted={soundMuted}
             onToggleSound={handleToggleSound}
           />
@@ -510,19 +551,132 @@ export default function App() {
           }}
         />
 
-        {/* Modern, high-performance Touch Controls (D-Pad + Action Buttons A & B) */}
+        {/* Modern, high-performance Touch Controls (D-Pad + ESC + Action Buttons A & B) */}
         {(gameState === 'EXPLORACAO' || gameState === 'DIALOGO') && (isTouch || isMobile) && (
           <TouchControls
             onDirectionChange={(dir) => setVirtualDir(dir)}
             onActionPress={() => simulateKeyDown(' ', 'Space')}
             onActionRelease={() => simulateKeyUp(' ', 'Space')}
             onPotionPress={triggerUsePotion}
+            onPausePress={() => setShowPause(true)}
             potionsCount={potionsCount}
             playerHp={player.hp}
             playerMaxHp={player.maxHp}
             disabled={gameState === 'DIALOGO'}
           />
         )}
+
+        {/* Pause Modal (Menu de Pausa / ESC para tablets e celulares) */}
+        <AnimatePresence>
+          {showPause && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 z-50 select-none font-mono"
+              onClick={() => setShowPause(false)}
+            >
+              <div 
+                className="w-full max-w-md bg-slate-900 border-2 border-amber-500 rounded-lg p-4 sm:p-6 relative shadow-[0_12px_40px_rgba(0,0,0,0.9)] ring-4 ring-amber-500/20"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close X button in top right */}
+                <button
+                  type="button"
+                  onClick={() => setShowPause(false)}
+                  className="absolute top-3 right-3 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 w-7 h-7 rounded flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  ✕
+                </button>
+
+                <h3 className="text-xs sm:text-base font-black text-yellow-400 mb-3 tracking-wider text-center border-b border-slate-800 pb-2.5 flex items-center justify-center gap-2">
+                  <Pause size={14} className="fill-amber-400" />
+                  <span>JOGO PAUSADO [ESC]</span>
+                </h3>
+
+                {/* Hero Status Card */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded p-2.5 mb-3.5 grid grid-cols-2 gap-2 text-[8px] sm:text-[9.5px]">
+                  <div>
+                    <span className="text-slate-400 block text-[7px] sm:text-[8px]">HERÓI</span>
+                    <strong className="text-white">LUCKY 🐾 (Nv. {player.level})</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[7px] sm:text-[8px]">ENERGIA</span>
+                    <strong className="text-emerald-400">{player.hp}/{player.maxHp} HP</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[7px] sm:text-[8px]">MEDALHAS</span>
+                    <strong className="text-yellow-400">{player.cristais}/7 Sagradas</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[7px] sm:text-[8px]">POÇÕES</span>
+                    <strong className="text-emerald-300">{potionsCount} restantes</strong>
+                  </div>
+                </div>
+
+                {/* Pause Action Buttons */}
+                <div className="space-y-2 mb-3.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      Som.click();
+                      setShowPause(false);
+                    }}
+                    className="w-full py-2.5 bg-red-700 hover:bg-red-600 text-white font-bold text-[10px] sm:text-xs rounded border border-amber-400 cursor-pointer transition-transform hover:scale-[1.01] active:scale-95 shadow flex items-center justify-center gap-2"
+                    style={{ minHeight: '42px' }}
+                  >
+                    <Play size={12} className="fill-white" /> CONTINUAR JOGO
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      Som.click();
+                      setShowPause(false);
+                      setShowHelp(true);
+                    }}
+                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-[9px] sm:text-[11px] rounded border border-slate-700 cursor-pointer transition-colors flex items-center justify-center gap-2 active:scale-95"
+                    style={{ minHeight: '38px' }}
+                  >
+                    <Info size={12} /> COMO JOGAR & GUIA FRACIONÁRIO
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleSound}
+                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[9px] sm:text-[11px] rounded border border-slate-700 cursor-pointer transition-colors flex items-center justify-center gap-2 active:scale-95"
+                    style={{ minHeight: '38px' }}
+                  >
+                    {soundMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+                    <span>ÁUDIO: {soundMuted ? 'DESLIGADO' : 'LIGADO'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPause(false);
+                      handleRestartGame();
+                    }}
+                    className="w-full py-2 bg-slate-900 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 font-bold text-[8.5px] sm:text-[10px] rounded border border-slate-800 hover:border-rose-900 cursor-pointer transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+                    style={{ minHeight: '36px' }}
+                  >
+                    <RotateCcw size={11} /> VOLTAR AO MENU INICIAL
+                  </button>
+                </div>
+
+                {/* Tablet Quick Tips */}
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded p-2.5 text-[7px] sm:text-[8px] text-amber-300/90 leading-relaxed">
+                  <div className="font-bold mb-1 text-amber-400">💡 Controles em Tablets e Celulares:</div>
+                  <ul className="space-y-0.5 list-disc list-inside">
+                    <li><strong>Toque na tela:</strong> Toque onde quiser e o Lucky anda até lá automaticamente!</li>
+                    <li><strong>Controles Virtuais:</strong> Joystick na esquerda, [A] para falar/interagir e [B] para curar.</li>
+                    <li><strong>Botão [ESC]:</strong> Toque no botão [ESC] na tela para pausar ou sair sem teclado físico!</li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Instructions overlay modal */}
         <AnimatePresence>
@@ -531,51 +685,65 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/90 flex items-center justify-center p-4 sm:p-6 z-50 select-none font-mono"
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 z-50 select-none font-mono"
+              onClick={() => setShowHelp(false)}
             >
-              <div className="w-full max-w-md bg-slate-900 border-2 border-amber-500 rounded p-4 sm:p-5 relative">
+              <div 
+                className="w-full max-w-md bg-slate-900 border-2 border-amber-500 rounded p-4 sm:p-5 relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close X button in top right corner */}
+                <button
+                  type="button"
+                  onClick={() => setShowHelp(false)}
+                  className="absolute top-3 right-3 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 w-7 h-7 rounded flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  ✕
+                </button>
+
                 <h3 className="text-xs sm:text-sm font-bold text-yellow-400 mb-3 tracking-wider text-center border-b border-slate-800 pb-2">
                   🎮 GUIA DO CAMPEÃO FRACIONÁRIO
                 </h3>
                 
                 <div className="space-y-2 sm:space-y-3 text-[8px] sm:text-[10px] text-slate-300 leading-relaxed mb-4 sm:mb-5">
                   <div className="flex items-start gap-2">
-                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold">W,A,S,D</span>
-                    <span>ou</span>
-                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold">Setas</span>
+                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold whitespace-nowrap">W,A,S,D / Setas</span>
                     <span>Andar pela ilha e cruzar as pontes.</span>
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold">ESPAÇO</span>
-                    <span>ou</span>
-                    <span className="bg-slate-950 px-1.5 py-0.5 rounded text-amber-300 border border-slate-800 font-bold">E</span>
+                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold whitespace-nowrap">ESPAÇO / [A]</span>
                     <span>Conversar com Campeões e abrir Diálogos.</span>
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold">CLIQUE / TOQUE</span>
+                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold whitespace-nowrap">CLIQUE / TOQUE</span>
                     <span>Clique em qualquer lugar da tela e o gato andará até lá! 🐾</span>
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <span className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 border border-slate-800 font-bold">P</span>
-                    <span>ou</span>
-                    <span className="bg-slate-950 px-1 py-0.5 rounded text-emerald-400 border border-slate-800 font-bold">Botão B</span>
+                    <span className="bg-slate-950 px-1 py-0.5 rounded text-emerald-400 border border-slate-800 font-bold whitespace-nowrap">P / [B]</span>
                     <span>Usar poção de cura instantânea (+35 HP).</span>
                   </div>
 
-                  <p className="border-t border-slate-800 pt-3.5 text-[7px] sm:text-[9px] text-amber-400/80">
+                  <div className="flex items-start gap-2">
+                    <span className="bg-slate-950 px-1 py-0.5 rounded text-rose-400 border border-slate-800 font-bold whitespace-nowrap">ESC / PAUSA</span>
+                    <span>Pausar jogo, sair de diálogos ou fugir de combate em tablets!</span>
+                  </div>
+
+                  <p className="border-t border-slate-800 pt-3 text-[7px] sm:text-[8.5px] text-amber-400/80">
                     💡 <strong>Dica de Sobrevivência:</strong> Abra os baús amarelos no mapa para coletar mais poções. Você precisará de todas as 6 medalhas para passar pela barreira de lava do Oni Supremo!
                   </p>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => {
                     Som.click();
                     setShowHelp(false);
                   }}
-                  className="w-full py-2 bg-red-700 hover:bg-red-600 text-white font-bold text-[10px] sm:text-xs rounded border border-red-500 cursor-pointer transition-transform hover:scale-105"
+                  className="w-full py-2 bg-red-700 hover:bg-red-600 text-white font-bold text-[10px] sm:text-xs rounded border border-red-500 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                  style={{ minHeight: '38px' }}
                 >
                   FECHAR GUIA
                 </button>

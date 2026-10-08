@@ -302,6 +302,18 @@ export const MinijogoScreen: React.FC<MinijogoScreenProps> = ({
 
   const usedQuestionIdsRef = useRef<string[]>([]);
 
+  // Support ESC key to flee/close minigame
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   // Generate a random fraction challenge based on the biome
   const generateQuestion = (): void => {
     setFeedback(null);
@@ -424,7 +436,17 @@ export const MinijogoScreen: React.FC<MinijogoScreenProps> = ({
               <div className="text-[8px] sm:text-[9px] text-slate-400">Escola de Treinamento Fracionário</div>
             </div>
           </div>
-          <div className="text-[8px] sm:text-[9px] text-emerald-400 font-bold animate-pulse">📖 APRENDENDO FRAÇÕES</div>
+          <div className="flex items-center gap-2">
+            <div className="text-[8px] sm:text-[9px] text-emerald-400 font-bold hidden xs:block animate-pulse">📖 APRENDENDO FRAÇÕES</div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-2.5 py-1 text-[8.5px] sm:text-[10px] text-rose-300 hover:text-white bg-rose-950/80 hover:bg-rose-900 border border-rose-700/80 rounded font-bold cursor-pointer active:scale-95 flex items-center gap-1 transition-all"
+              style={{ minHeight: '32px' }}
+            >
+              ✕ Sair [ESC]
+            </button>
+          </div>
         </div>
 
         {/* Lesson Body */}
@@ -462,18 +484,22 @@ export const MinijogoScreen: React.FC<MinijogoScreenProps> = ({
         {/* Footer actions */}
         <div className="flex gap-3 justify-between items-center border-t border-slate-900 pt-2.5">
           <button
+            type="button"
             onClick={onClose}
-            className="text-red-400 hover:text-red-300 transition-colors font-bold text-[9px] sm:text-[10px] cursor-pointer"
+            className="px-3 py-1.5 bg-slate-900/90 border border-rose-800 text-rose-400 hover:text-rose-200 rounded text-[9px] sm:text-[10px] font-bold cursor-pointer transition-all active:scale-95 flex items-center gap-1"
+            style={{ minHeight: '38px' }}
           >
-            [CORRER] Fugir do Combate
+            ✕ Fugir do Combate [ESC]
           </button>
           
           <button
+            type="button"
             onClick={() => {
               Som.click();
               setShowingExplanation(false);
             }}
             className="px-4 py-2 bg-red-700 hover:bg-red-600 active:scale-95 text-white font-bold text-[9px] sm:text-[10px] rounded border-2 border-amber-400 cursor-pointer shadow-lg hover:scale-105 tracking-wider font-mono flex items-center gap-1.5 transition-transform"
+            style={{ minHeight: '38px' }}
           >
             ENTENDI, JOGAR DESAFIO! ⚡
           </button>
@@ -503,18 +529,30 @@ export const MinijogoScreen: React.FC<MinijogoScreenProps> = ({
           </div>
         </div>
 
-        {/* Boss HP Bar */}
-        <div className="w-full sm:w-64 flex flex-col">
-          <div className="flex justify-between items-center text-[9px] text-red-400 font-bold mb-1">
-            <span>🔴 ENERGIA DO CAMPEÃO</span>
-            <span>{bossHp}/{maxBossHp}</span>
+        {/* Boss HP Bar and quick escape button */}
+        <div className="w-full sm:w-auto flex items-center gap-3">
+          <div className="w-full sm:w-56 flex flex-col">
+            <div className="flex justify-between items-center text-[9px] text-red-400 font-bold mb-1">
+              <span>🔴 ENERGIA DO CAMPEÃO</span>
+              <span>{bossHp}/{maxBossHp}</span>
+            </div>
+            <div className="w-full h-3.5 bg-slate-950 border border-slate-700 rounded-sm overflow-hidden p-[1px]">
+              <div
+                className="h-full bg-red-600 rounded-sm transition-all duration-300"
+                style={{ width: `${(bossHp / maxBossHp) * 100}%` }}
+              />
+            </div>
           </div>
-          <div className="w-full h-3.5 bg-slate-950 border border-slate-700 rounded-sm overflow-hidden p-[1px]">
-            <div
-              className="h-full bg-red-600 rounded-sm transition-all duration-300"
-              style={{ width: `${(bossHp / maxBossHp) * 100}%` }}
-            />
-          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-2.5 py-1 text-[8.5px] sm:text-[10px] text-rose-300 hover:text-white bg-rose-950/80 hover:bg-rose-900 border border-rose-700/80 rounded font-bold cursor-pointer active:scale-95 flex items-center gap-1 transition-all whitespace-nowrap"
+            style={{ minHeight: '34px' }}
+            title="Sair do combate (ESC)"
+          >
+            ✕ Fugir [ESC]
+          </button>
         </div>
       </div>
 
@@ -616,12 +654,14 @@ export const MinijogoScreen: React.FC<MinijogoScreenProps> = ({
 
       {/* Minigame Footer */}
       <div className="flex justify-between items-center text-[10px] text-slate-500 border-t border-slate-900 pt-3">
-        <span>Foco mental • Esporte Sagrado</span>
+        <span className="hidden xs:inline">Foco mental • Esporte Sagrado</span>
         <button
+          type="button"
           onClick={onClose}
-          className="text-red-400 hover:text-red-300 transition-colors font-bold select-none cursor-pointer"
+          className="px-3 py-1.5 bg-slate-900 border border-rose-800 text-rose-400 hover:text-rose-200 rounded text-[9.5px] sm:text-[11px] font-bold select-none cursor-pointer active:scale-95 transition-all flex items-center gap-1 ml-auto"
+          style={{ minHeight: '38px' }}
         >
-          [CORRER] Fugir do Combate
+          ✕ Fugir do Combate [ESC]
         </button>
       </div>
     </div>

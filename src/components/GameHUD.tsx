@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Heart, Trophy, Sparkles, HelpCircle, Volume2, VolumeX, Backpack } from 'lucide-react';
+import { Heart, Trophy, Sparkles, HelpCircle, Volume2, VolumeX, Backpack, Pause } from 'lucide-react';
 
 interface GameHUDProps {
   playerHp: number;
@@ -14,6 +14,7 @@ interface GameHUDProps {
   pocoes: number;
   onUsePotion: () => void;
   onOpenHelp: () => void;
+  onOpenPause?: () => void;
   soundMuted: boolean;
   onToggleSound: () => void;
 }
@@ -26,6 +27,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   pocoes,
   onUsePotion,
   onOpenHelp,
+  onOpenPause,
   soundMuted,
   onToggleSound,
 }) => {
@@ -101,11 +103,25 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-1 sm:gap-2 border-l border-slate-800 pl-1 sm:pl-4">
+        <div className="flex items-center gap-1 sm:gap-2 border-l border-slate-800 pl-1 sm:pl-3">
+          {/* Pause / ESC button for tablet and mobile */}
+          {onOpenPause && (
+            <button
+              type="button"
+              onClick={onOpenPause}
+              className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 rounded border border-amber-500/60 transition-colors cursor-pointer min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center gap-1 text-[7.5px] sm:text-[9.5px] font-bold font-mono active:scale-95"
+              title="Pausar jogo / Menu de Opções (ESC)"
+            >
+              <Pause className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-300" />
+              <span className="hidden xs:inline">ESC</span>
+            </button>
+          )}
+
           {/* Audio toggle */}
           <button
+            type="button"
             onClick={onToggleSound}
-            className="p-1.5 sm:p-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded border border-slate-700 transition-colors cursor-pointer min-w-[48px] min-h-[48px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+            className="p-1.5 sm:p-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded border border-slate-700 transition-colors cursor-pointer min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
             title={soundMuted ? 'Ativar som' : 'Mudar som'}
           >
             {soundMuted ? <VolumeX className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Volume2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
@@ -113,8 +129,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
           {/* Help guides */}
           <button
+            type="button"
             onClick={onOpenHelp}
-            className="p-1.5 sm:p-1.5 bg-slate-800/80 hover:bg-slate-700 text-amber-300 hover:text-amber-200 rounded border border-slate-700 transition-colors cursor-pointer min-w-[48px] min-h-[48px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+            className="p-1.5 sm:p-1.5 bg-slate-800/80 hover:bg-slate-700 text-amber-300 hover:text-amber-200 rounded border border-slate-700 transition-colors cursor-pointer min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
             title="Ver controles e dicas"
           >
             <HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />

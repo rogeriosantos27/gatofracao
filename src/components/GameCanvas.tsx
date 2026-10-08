@@ -1657,15 +1657,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.save();
       // Draw a retro bubble container
       ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(nX - 44, nY - 14, 88, 14);
+      ctx.fillRect(nX - 58, nY - 14, 116, 14);
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(nX - 44, nY - 14, 88, 14);
+      ctx.strokeRect(nX - 58, nY - 14, 116, 14);
 
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 7px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('[ESPAÇO] Conversar', nX, nY - 5);
+      ctx.fillText('[A] / Toque p/ Falar 🐾', nX, nY - 5);
       ctx.restore();
     }
   };

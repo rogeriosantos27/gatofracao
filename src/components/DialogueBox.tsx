@@ -121,13 +121,16 @@ export const DialogueBox: React.FC<DialogueBoxProps> = ({ npc, onComplete, onClo
             </span>
           </div>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onClose();
             }}
-            className="text-[9px] text-slate-400 hover:text-rose-400 px-2 py-1 rounded border border-slate-800 hover:border-rose-800 bg-slate-900/60 font-mono transition-colors"
+            onTouchStart={(e) => e.stopPropagation()}
+            className="text-[9px] sm:text-[11px] text-rose-300 hover:text-white bg-rose-950/70 hover:bg-rose-900 border border-rose-700/80 px-2.5 py-1 rounded font-mono transition-colors active:scale-95 flex items-center gap-1 cursor-pointer"
+            style={{ minHeight: '36px' }}
           >
-            ✕ Fechar
+            ✕ Sair (ESC)
           </button>
         </div>
 
@@ -137,14 +140,16 @@ export const DialogueBox: React.FC<DialogueBoxProps> = ({ npc, onComplete, onClo
           {isTyping && <span className="inline-block w-2 h-3.5 bg-amber-400 ml-1 animate-ping" />}
         </div>
 
-        {/* Legend footer with prominent touch button */}
-        <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-slate-900 text-[8px] sm:text-[10px] font-mono">
+        {/* Legend footer with prominent touch buttons for tablets */}
+        <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-slate-900 text-[8.5px] sm:text-[10px] font-mono gap-2">
           <button 
             type="button"
-            className="text-slate-500 hover:text-slate-300 px-2 py-1.5 rounded transition-colors" 
+            className="text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-700 px-3 py-1.5 rounded transition-all active:scale-95 flex items-center gap-1 cursor-pointer" 
+            style={{ minHeight: '38px' }}
             onClick={(e) => { e.stopPropagation(); onClose(); }}
+            onTouchStart={(e) => e.stopPropagation()}
           >
-            [ESC] Sair
+            ✕ Sair [ESC]
           </button>
           <button
             type="button"
@@ -152,10 +157,11 @@ export const DialogueBox: React.FC<DialogueBoxProps> = ({ npc, onComplete, onClo
               e.stopPropagation();
               handleAdvance();
             }}
-            className="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black px-3.5 sm:px-5 py-1.5 sm:py-2 rounded border border-amber-300 shadow flex items-center gap-1.5 transition-transform"
-            style={{ minHeight: '36px' }}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black px-4 sm:px-6 py-1.5 sm:py-2 rounded border-2 border-amber-300 shadow-lg flex items-center gap-1.5 transition-transform cursor-pointer"
+            style={{ minHeight: '38px' }}
           >
-            {isTyping ? '⏩ Pular' : currentLineIdx < lines.length - 1 ? 'Avançar ➔' : 'Desafiar Campeão! ⚔️'}
+            {isTyping ? '⏩ Pular Texto' : currentLineIdx < lines.length - 1 ? 'Avançar ➔' : 'Desafiar Campeão! ⚔️'}
           </button>
         </div>
       </div>
